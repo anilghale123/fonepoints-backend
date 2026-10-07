@@ -1,0 +1,24 @@
+{
+  "name": "fonepoints-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Fonepoints Business portal backend. Holds the OMS company API key and exchanges it for a merchant access token on the portal's behalf.",
+  "scripts": {
+    "dev": "node --watch --env-file-if-exists=.env src/index.ts",
+    "start": "node --env-file-if-exists=.env src/index.ts",
+    "tsc:check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "express": "^5.2.0"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.9",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.5",
+    "@types/node": "^24.19.1",
+    "typescript": "^5"
+  }
+}
