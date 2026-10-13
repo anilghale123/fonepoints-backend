@@ -1,21 +1,21 @@
 /**
- * The portal's users — dummy data, like everything else in this phase.
+ * The portal's users — dummy data, standing in for the real Fonepoints identity provider.
  *
- * There is no real Fonepoints identity provider to talk to, so a sign-in is an email lookup. What
+ * There is no real Fonepoints sign-in to talk to here, so a sign-in is an email lookup. What
  * matters for the OMS handoff is the one field a real session would also have to carry:
- * `omsMerchantRef`, the name OMS knows this merchant by. That is what the token request is made
+ * `merchantId`, the id Providhy knows this merchant by. That is what the token request is made
  * with, so it decides whose orders the merchant sees.
  *
  * Replacing this with the real portal session is the whole change on this side: everything
- * downstream only reads `omsMerchantRef`.
+ * downstream only reads `merchantId`.
  */
 
 export interface PortalUser {
 	email: string;
 	name: string;
 	role: string;
-	/** `externalRef` of the merchant in `oms-backend`'s registration. */
-	omsMerchantRef: string;
+	/** The merchant's id in Providhy (Sales `merchant_detail.id`), e.g. `M-1029`. */
+	merchantId: string;
 }
 
 export const PORTAL_USERS: readonly PortalUser[] = [
@@ -23,13 +23,8 @@ export const PORTAL_USERS: readonly PortalUser[] = [
 		email: "merchant@fonepoints.local",
 		name: "Merchant User",
 		role: "Merchant",
-		omsMerchantRef: "fp-hamro-mobile",
-	},
-	{
-		email: "gadget@fonepoints.local",
-		name: "Gadget Ghar Owner",
-		role: "Owner",
-		omsMerchantRef: "fp-gadget-ghar",
+		// The merchant the dev Sales service has orders for.
+		merchantId: "M-1029",
 	},
 ];
 

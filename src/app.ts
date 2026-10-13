@@ -9,7 +9,7 @@
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
-import { PORTAL_ORIGIN, USING_PLACEHOLDER_API_KEY } from "./config.ts";
+import { IAM_URL, PORTAL_ORIGIN } from "./config.ts";
 import { authRouter } from "./routes/auth.ts";
 import { omsRouter } from "./routes/oms.ts";
 
@@ -26,7 +26,7 @@ export function createApp() {
 			status: "ok",
 			service: "fonepoints-backend",
 			portalOrigin: PORTAL_ORIGIN,
-			usingPlaceholderApiKey: USING_PLACEHOLDER_API_KEY,
+			iamUrl: IAM_URL,
 		});
 	});
 

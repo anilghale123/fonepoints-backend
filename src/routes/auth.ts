@@ -49,19 +49,19 @@ authRouter.post("/logout", (req, res) => {
 /**
  * What the portal frontend is told about its own user.
  *
- * `omsMerchantRef` is included: the portal shows which merchant it is about to open OMS as, and
- * it is not a secret — it names a merchant, and holding it authorises nothing without the API key.
+ * `merchantId` is included: the portal shows which merchant it is about to open OMS as, and it
+ * is not a secret — it names a merchant, and holding it authorises nothing without the API key.
  */
 function publicUser(user: {
 	email: string;
 	name: string;
 	role: string;
-	omsMerchantRef: string;
+	merchantId: string;
 }) {
 	return {
 		email: user.email,
 		name: user.name,
 		role: user.role,
-		omsMerchantRef: user.omsMerchantRef,
+		merchantId: user.merchantId,
 	};
 }

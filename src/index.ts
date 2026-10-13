@@ -4,20 +4,17 @@
  */
 
 import { createApp } from "./app.ts";
-import { OMS_BASE_URL, PORT, PORTAL_ORIGIN, USING_PLACEHOLDER_API_KEY } from "./config.ts";
+import { IAM_API_KEY, IAM_URL, PORT, PORTAL_ORIGIN } from "./config.ts";
 
-// A deployed service must not run on the shared development key: anyone who has read the repo
-// knows it. Refusing to start is louder than a log line nobody reads on a VPS.
-if (process.env.NODE_ENV === "production" && USING_PLACEHOLDER_API_KEY) {
-	console.error("OMS_API_KEY is still the development placeholder. Set a real key and restart.");
+// Without the key every token request would fail with a confusing IAM error. Refusing to start is
+// louder than a log line nobody reads on a VPS.
+if (!IAM_API_KEY) {
+	console.error("IAM_API_KEY is not set. Put the Providhy API key in .env and restart.");
 	process.exit(1);
 }
 
 createApp().listen(PORT, () => {
 	console.log(`fonepoints-backend  http://localhost:${PORT}`);
 	console.log(`  portal origin     ${PORTAL_ORIGIN}`);
-	console.log(`  oms backend       ${OMS_BASE_URL}`);
-	if (USING_PLACEHOLDER_API_KEY) {
-		console.log("  oms api key       placeholder — set OMS_API_KEY to match oms-backend");
-	}
+	console.log(`  providhy iam      ${IAM_URL}`);
 });
