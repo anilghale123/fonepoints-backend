@@ -8,6 +8,7 @@
  */
 
 import { Router } from "express";
+import { log } from "../log.ts";
 import { endSession, readSession, startSession } from "../session.ts";
 import { PORTAL_USERS, findUser } from "../users.ts";
 
@@ -29,20 +30,25 @@ authRouter.post("/login", (req, res) => {
 
 	const user = findUser(email);
 	startSession(res, user);
+	// The email is a person's address, so the log names the merchant it mapped to instead.
+	log("auth", `demo sign-in: portal session started for merchant ${user.merchantId}`);
 	res.json({ user: publicUser(user) });
 });
 
 authRouter.get("/session", (req, res) => {
 	const user = readSession(req);
 	if (!user) {
+		log("auth", "session check: not signed in");
 		res.status(401).json({ error: { code: "unauthorized", message: "Not signed in" } });
 		return;
 	}
+	log("auth", `session check: signed in as merchant ${user.merchantId}`);
 	res.json({ user: publicUser(user) });
 });
 
 authRouter.post("/logout", (req, res) => {
 	endSession(req, res);
+	log("auth", "portal session ended");
 	res.json({ ok: true });
 });
 

@@ -5,6 +5,7 @@
 
 import { createApp } from "./app.ts";
 import { IAM_API_KEY, IAM_URL, PORT, PORTAL_ORIGIN } from "./config.ts";
+import { log } from "./log.ts";
 
 // Without the key every token request would fail with a confusing IAM error. Refusing to start is
 // louder than a log line nobody reads on a VPS.
@@ -17,4 +18,5 @@ createApp().listen(PORT, () => {
 	console.log(`fonepoints-backend  http://localhost:${PORT}`);
 	console.log(`  portal origin     ${PORTAL_ORIGIN}`);
 	console.log(`  providhy iam      ${IAM_URL}`);
+	log("http", "request log on: lines are [FP-backend:…]; secrets are never printed (LOG_QUIET=1 silences them)");
 });

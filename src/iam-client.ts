@@ -11,6 +11,7 @@
  */
 
 import { IAM_API_KEY, IAM_URL } from "./config.ts";
+import { log, warn } from "./log.ts";
 
 /** IAM is a network hop on every first open of OMS; a hung call must not hang the portal. */
 const TIMEOUT_MS = 15_000;
@@ -38,6 +39,8 @@ export class IamError extends Error {
  */
 export async function mintMerchantToken(merchantId: string): Promise<string> {
 	const path = "api/external/oms/merchant-token/mint/";
+	const startedAt = Date.now();
+	log("iam", `step 11 · POST ${IAM_URL}${path} for merchant ${merchantId} (X-API-Key attached, not logged)`);
 	let res: Response;
 	try {
 		res = await fetch(`${IAM_URL}${path}`, {
@@ -51,7 +54,9 @@ export async function mintMerchantToken(merchantId: string): Promise<string> {
 			signal: AbortSignal.timeout(TIMEOUT_MS),
 		});
 	} catch (cause) {
-		console.error(`[iam] ${path} unreachable:`, cause instanceof Error ? cause.message : cause);
+		warn("iam", `✖ step 12 · ${path} unreachable after ${Date.now() - startedAt} ms`, {
+			reason: cause instanceof Error ? cause.message : String(cause),
+		});
 		throw new IamError("Providhy IAM is unreachable", 502, "iam_unreachable");
 	}
 
@@ -59,7 +64,9 @@ export async function mintMerchantToken(merchantId: string): Promise<string> {
 
 	if (!res.ok) {
 		// Logged for the operator; the portal gets one plain sentence.
-		console.error(`[iam] ${path} failed for merchant ${merchantId}: ${res.status}`, body);
+		warn("iam", `✖ step 12 · IAM refused the request for merchant ${merchantId}: HTTP ${res.status} (${Date.now() - startedAt} ms)`, {
+			body,
+		});
 		throw new IamError(
 			"Providhy IAM refused the token request",
 			502,
@@ -72,8 +79,9 @@ export async function mintMerchantToken(merchantId: string): Promise<string> {
 			? (body as { token: unknown }).token
 			: null;
 	if (typeof token !== "string" || !token) {
-		console.error(`[iam] ${path} answered without a token for merchant ${merchantId}`);
+		warn("iam", `✖ step 13 · IAM answered HTTP ${res.status} but with no token for merchant ${merchantId}`);
 		throw new IamError("Providhy IAM sent no token", 502, "iam_no_token");
 	}
+	log("iam", `✔ step 13 · IAM issued a token for merchant ${merchantId} (${token.length} chars, ${Date.now() - startedAt} ms)`);
 	return token;
 }

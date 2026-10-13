@@ -10,6 +10,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
 import { IAM_URL, PORTAL_ORIGIN } from "./config.ts";
+import { log } from "./log.ts";
 import { authRouter } from "./routes/auth.ts";
 import { omsRouter } from "./routes/oms.ts";
 
@@ -17,6 +18,17 @@ export function createApp() {
 	const app = express();
 
 	app.disable("x-powered-by");
+	// One line per request: method, path, status, time, and the Origin it came from. Never the
+	// cookie, the query or a body, so a log line cannot leak a session or a token.
+	app.use((req, res, next) => {
+		const startedAt = Date.now();
+		res.on("finish", () => {
+			log("http", `${req.method} ${req.path} → ${res.statusCode} (${Date.now() - startedAt} ms)`, {
+				origin: req.get("origin") ?? "none",
+			});
+		});
+		next();
+	});
 	app.use(cors({ origin: PORTAL_ORIGIN, credentials: true }));
 	app.use(cookieParser());
 	app.use(express.json({ limit: "256kb" }));

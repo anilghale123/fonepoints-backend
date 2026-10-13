@@ -20,6 +20,7 @@
 import { Router } from "express";
 import { PORTAL_ORIGIN } from "../config.ts";
 import { IamError, mintMerchantToken } from "../iam-client.ts";
+import { log, warn } from "../log.ts";
 import { readSession } from "../session.ts";
 
 export const omsRouter = Router();
@@ -30,20 +31,29 @@ omsRouter.post("/token", async (req, res) => {
 	// caller, which has no session cookie to spend anyway.
 	const origin = req.get("origin");
 	if (origin && origin !== PORTAL_ORIGIN) {
+		warn("oms", "✖ step 9 · POST /api/oms/token refused: the request's Origin is not the portal", {
+			origin,
+			expected: PORTAL_ORIGIN,
+		});
 		res.status(403).json({ error: { code: "forbidden", message: "Wrong origin" } });
 		return;
 	}
 
 	const user = readSession(req);
 	if (!user) {
+		warn("oms", "✖ step 10 · POST /api/oms/token refused: no portal session (no cookie, or it is unknown)");
 		res
 			.status(401)
 			.json({ error: { code: "unauthorized", message: "Sign in to open OMS" } });
 		return;
 	}
 
+	log("oms", `step 10–11 · portal session found for merchant ${user.merchantId}; asking IAM for a token`);
 	try {
 		const accessToken = await mintMerchantToken(user.merchantId);
+		log("oms", "✔ step 13–14 · returning { accessToken } to the portal (not stored here)", {
+			accessToken,
+		});
 		// The token goes back to the portal frontend, which posts it into the iframe. It is not
 		// written into a cookie here: this origin is the portal's, and OMS needs it on its own.
 		res.set("cache-control", "no-store").json({ accessToken });
@@ -52,6 +62,7 @@ omsRouter.post("/token", async (req, res) => {
 			cause instanceof IamError
 				? cause
 				: new IamError("Could not open OMS", 500, "server_error");
+		warn("oms", `✖ step 12 · no token for merchant ${user.merchantId}: ${error.code} → HTTP ${error.status}`);
 		res.status(error.status).json({ error: { code: error.code, message: error.message } });
 	}
 });
