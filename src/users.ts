@@ -1,43 +1,42 @@
 /**
- * The portal's users — dummy data, standing in for the real Fonepoints identity provider.
+ * The portal's user, as the portal's login page describes themselves.
  *
- * There is no real Fonepoints sign-in to talk to here, so a sign-in is an email lookup. What
- * matters for the OMS handoff is the one field a real session would also have to carry:
- * `merchantId`, the id Providhy knows this merchant by. That is what the token request is made
- * with, so it decides whose orders the merchant sees.
+ * There is no Fonepoints identity provider to talk to here, so the login takes whatever it is
+ * given and checks nothing: any name and email signs in, and nothing is looked up. What matters
+ * for the OMS handoff is the one field a real session would also have to carry: `merchantId`, the
+ * id Providhy knows this merchant by. That is what the token request is made with, so it decides
+ * whose orders the merchant sees.
  *
- * Replacing this with the real portal session is the whole change on this side: everything
- * downstream only reads `merchantId`.
+ * Replacing this with the real portal identity means changing `routes/auth.ts` and this file, and
+ * nothing downstream: everything past that point only reads `merchantId`.
  */
 
 export interface PortalUser {
-	email: string;
 	name: string;
+	email: string;
 	role: string;
 	/** The merchant's id in Providhy (Sales `merchant_detail.id`), e.g. `M-1029`. */
 	merchantId: string;
 }
 
-export const PORTAL_USERS: readonly PortalUser[] = [
-	{
-		email: "merchant@fonepoints.local",
-		name: "Merchant User",
-		role: "Merchant",
-		// The merchant the dev Sales service has orders for.
-		merchantId: "M-1029",
-	},
-];
+/** The merchant the development Sales service has orders for; used when none is typed. */
+export const DEFAULT_MERCHANT_ID = "M-1029";
 
-/**
- * Looks a user up by email, case-insensitively.
- *
- * An unknown email signs in as the first user rather than failing. This is a demo sign-in with no
- * password, so refusing would only make the flow harder to walk through; a real one replaces this
- * function outright.
- */
-export function findUser(email: string): PortalUser {
-	const match = PORTAL_USERS.find(
-		(user) => user.email.toLowerCase() === email.trim().toLowerCase(),
-	);
-	return match ?? PORTAL_USERS[0]!;
+/** Fields end up in the session cookie, so they are kept short. */
+const MAX_LENGTH = 100;
+
+function text(value: unknown, fallback: string): string {
+	return typeof value === "string" && value.trim() ? value.trim().slice(0, MAX_LENGTH) : fallback;
+}
+
+/** Builds the user from a login body. Never fails: anything missing gets a default. */
+export function userFromLogin(body: unknown): PortalUser {
+	const input = (typeof body === "object" && body !== null ? body : {}) as Record<string, unknown>;
+	const email = text(input.email, "");
+	return {
+		name: text(input.name, email.split("@")[0] || "Merchant"),
+		email,
+		role: "Merchant",
+		merchantId: text(input.merchantId, DEFAULT_MERCHANT_ID),
+	};
 }

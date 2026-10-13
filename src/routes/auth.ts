@@ -1,5 +1,6 @@
 /**
- * The portal's own sign-in. Dummy by design — there is no password, and any email signs in.
+ * The portal's own sign-in. Free by design — no password, nothing is validated, any name and
+ * email signs in.
  *
  * It is here because the OMS handoff needs something to answer "who is asking": the token route
  * refuses without a session, so the API key cannot be spent by anyone who merely knows the
@@ -10,28 +11,20 @@
 import { Router } from "express";
 import { log } from "../log.ts";
 import { endSession, readSession, startSession } from "../session.ts";
-import { PORTAL_USERS, findUser } from "../users.ts";
+import { userFromLogin } from "../users.ts";
 
 export const authRouter = Router();
 
-/** The accounts a demo can sign in as, so the portal can offer them rather than guess. */
-authRouter.get("/users", (_req, res) => {
-	res.json({
-		users: PORTAL_USERS.map(({ email, name, role }) => ({ email, name, role })),
-	});
-});
-
+/**
+ * Signs in whoever asks: `{ name?, email?, merchantId? }`, all optional and none checked. The
+ * merchant id is the one thing that matters downstream (it names whose orders OMS shows), so it
+ * defaults to the development merchant.
+ */
 authRouter.post("/login", (req, res) => {
-	const email = typeof req.body?.email === "string" ? req.body.email : "";
-	if (!email.trim()) {
-		res.status(400).json({ error: { code: "invalid_body", message: "An email is required" } });
-		return;
-	}
-
-	const user = findUser(email);
+	const user = userFromLogin(req.body);
 	startSession(res, user);
-	// The email is a person's address, so the log names the merchant it mapped to instead.
-	log("auth", `demo sign-in: portal session started for merchant ${user.merchantId}`);
+	// The email is a person's address, so the log names the merchant instead.
+	log("auth", `sign-in: portal session started for merchant ${user.merchantId}`);
 	res.json({ user: publicUser(user) });
 });
 
